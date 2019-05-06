@@ -40,7 +40,6 @@ class ATCommands(object):
         else:
             return atcmd('E', False) + '1\r\n'
 
-
     @classmethod
     def dial(cls, number):
         assert isinstance(number, str)
@@ -67,6 +66,10 @@ class ATCommands(object):
         return [atset('CMGS', True) + '"{0}"\r'.format(number),
                 '{0}\x1a\n'.format(text)]
 
+    @classmethod
+    def delallmsgs(cls):
+        return atset('CMGD', True) + '1,4\r\n'
+
 
 @six.add_metaclass(ABCMeta)
 class SIMModuleBase(object):
@@ -80,6 +83,7 @@ class SIMModuleBase(object):
 
     def __initialize(self):
         cmds = [
+            'AT',
             'AT+CLIP=1',
             'ATE0',
         ]
@@ -99,6 +103,9 @@ class SIMModuleBase(object):
             msgs.append(line)
             if line == 'OK\r\n':
                 done = True
+            elif line == 'ERROR\r\n':
+                done = False
+                raise Exception('Failed')
             if line is None or line == '':
                 counter += 1
         if not done:
@@ -131,6 +138,17 @@ class SIMModuleBase(object):
             #missed call
             pass
 
+    def __massage_recv_data(self, msgs):
+        rtn = []
+        for i in msgs:
+            if i != '\r\n':
+                if len(i) > 2 and i[-2:] == '\r\n':
+                    i = i[:-2]
+                if len(i) >= 4 and i == 'OK\r\n':
+                    continue
+                rtn.append(i)
+        return rtn
+
     def __process_plus(self, line):
         tokens = line.split(':')
         datatype = tokens[0]
@@ -139,7 +157,18 @@ class SIMModuleBase(object):
             tmp = ATCommands.readmsg(sms_idx)
             self.__datasource.write(tmp.encode())
             msgs = self.__wait_ok()
-            print(msgs)
+            msgs = self.__massage_recv_data(msgs)
+
+            tmp = msgs[0].split(',')
+            number = tmp[1]
+            if number[0] == '\"' and number[-1] == '\"':
+                number = number[1:-1]
+            content = msgs[1:-1]
+            self.on_message(number, '\n'.join(content))
+
+            tmp = ATCommands.delallmsgs()
+            self.__datasource.write(tmp.encode())
+            self.__wait_ok()
 
     def __worker(self):
         while True:
@@ -153,7 +182,7 @@ class SIMModuleBase(object):
 
 class MySIM(SIMModuleBase):
     def on_message(self, number, text):
-        pass
+        print('Text from: {0}, Content: \"{1}\"'.format(number, text))
     
     def on_call(self, number):
         pass
