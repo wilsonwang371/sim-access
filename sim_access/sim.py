@@ -69,6 +69,26 @@ class SIMModuleBase(object):
         self.__thread = threading.Thread(target=self.__worker)
         self.__thread.start()
 
+    def initialize(self):
+        cmds = [
+            'AT+CLIP=1',
+        ]
+        for i in cmds:
+            self.__datasource.write('{0}\r\n'.format(i).encode())
+            self.__wait_ok()
+
+    def __wait_ok(self):
+        done = False
+        counter = 0
+        while done == False and counter < 3:
+            line = self.__datasource.readline()
+            line = line.decode()
+            if line[:1] == 'OK':
+                done = True
+            counter += 1
+        if not done:
+            raise Exception('No OK reply')
+
     @abstractmethod
     def on_message(self, number, text):
         raise NotImplementedError()
@@ -82,13 +102,31 @@ class SIMModuleBase(object):
         for i in cmd:
             self.__datasource.write(i.encode())
             time.sleep(1)
-    
+
+    def __process_data(self, line):
+        if line[0] == '+':
+            self.__process_plus(line[1:])
+        elif line[:3] == 'RING':
+            #incoming call
+            # need to use at+clcc to get phone number
+            pass
+        elif line[:10] == 'MISSED_CALL':
+            #missed call
+            pass
+
+    def __process_plus(self, line):
+        tokens = line.split(':')
+        datatype = tokens[0][1:]
+        if datatype.upper() == 'CMTI':
+            #new message
+            sms_idx = tokens[1].split(',')[-1]
+
     def __worker(self):
         while True:
             try:
                 line = self.__datasource.readline()
-                sys.stdout.write(line.decode())
-                sys.stdout.flush()
+                line = line.decode()
+                self.__process_data(line)
             except Exception as e:
                 print(str(e))
 
