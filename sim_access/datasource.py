@@ -40,12 +40,12 @@ class SerialDataSource(DataSource):
     
     def readline(self):
         data = self.__port.readline()
-        print('<' + data.decode())
+        #print('<' + data.decode())
         return data
 
     def write(self, data):
         assert isinstance(data, bytes)
-        print('>' + data.decode())
+        #print('>' + data.decode())
         self.__port.write(data)
 
     def available(self):

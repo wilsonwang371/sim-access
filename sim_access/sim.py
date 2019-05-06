@@ -105,7 +105,7 @@ class SIMModuleBase(object):
         ]
         print('Initializing SIM module...')
         for i in cmds:
-            print(i)
+            #print(i)
             self.__datasource.write('{0}\r\n'.format(i).encode())
             self.__wait_ok()
 
@@ -143,7 +143,6 @@ class SIMModuleBase(object):
             time.sleep(1)
 
     def __process_data(self, line):
-        #print(line)
         if len(line) > 1 and line[0] == '+':
             self.__process_plus(line)
         elif len(line) > 4 and line[:3] == 'RING':
