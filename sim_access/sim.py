@@ -6,6 +6,10 @@ import time
 import sys
 
 
+def ucs2string(text):
+    return text.encode('utf-16-be').hex().upper()
+
+
 def atcmd(cmd, extended):
     assert isinstance(cmd, str)
     if extended:
@@ -14,6 +18,7 @@ def atcmd(cmd, extended):
         cmd = 'AT{0}'.format(cmd.upper())
     return cmd
 
+
 def atread(cmd, extended):
     assert isinstance(cmd, str)
     if extended:
@@ -21,6 +26,7 @@ def atread(cmd, extended):
     else:
         cmd = 'AT{0}?'.format(cmd.upper())
     return cmd
+
 
 def atset(cmd, extended):
     assert isinstance(cmd, str)
@@ -63,8 +69,8 @@ class ATCommands(object):
 
     @classmethod
     def sendmsg(cls, number, text):
-        return [atset('CMGS', True) + '"{0}"\r'.format(number),
-                '{0}\x1a\n'.format(text)]
+        return [atset('CMGS', True) + '"{0}"\r'.format(ucs2string(number)),
+                '{0}\x1a\n'.format(ucs2string(text))]
 
     @classmethod
     def delallmsgs(cls):
@@ -84,8 +90,11 @@ class SIMModuleBase(object):
     def __initialize(self):
         cmds = [
             'AT',
+            'AT+CMGF=1',
+            'AT+CSMP=17,167,0,8',
             'AT+CLIP=1',
             'ATE0',
+            'AT+CSCS="UCS2"',
         ]
         print('Initializing SIM module...')
         for i in cmds:
@@ -178,6 +187,7 @@ class SIMModuleBase(object):
                 self.__process_data(line)
             except Exception as e:
                 print(str(e))
+                sys.exit(0)
 
 
 class MySIM(SIMModuleBase):
