@@ -9,7 +9,11 @@ import sys
 class DataSource(object):
 
     @abstractmethod
-    def read(self, size=1):
+    def read(self, size=0):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def readline(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -27,8 +31,15 @@ class SerialDataSource(DataSource):
     def __init__(self, devfile='/dev/tty.usbserial-00000000', baud=115200):
         self.__port = serial.Serial(devfile, baudrate=baud, timeout=3.0)
 
-    def read(self, size=1):
-        data = self.__port.read(size)
+    def read(self, size=0):
+        if size == 0:
+            data = self.__port.read_all()
+        else:
+            data = self.__port.read(size)
+        return data
+    
+    def readline(self):
+        data = self.__port.readline()
         return data
 
     def write(self, data):
@@ -44,4 +55,4 @@ if __name__ == '__main__':
     tmp.write('AT\r\n'.encode())
     time.sleep(3)
     while tmp.available():
-        sys.stdout.write(tmp.read().decode())
+        sys.stdout.write('[{0}]'.format(tmp.readline().decode()))
