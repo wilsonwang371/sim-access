@@ -34,6 +34,14 @@ def atset(cmd, extended):
 class ATCommands(object):
 
     @classmethod
+    def setecho(cls, enable):
+        if enable == False:
+            return atcmd('E', False) + '0\r\n'
+        else:
+            return atcmd('E', False) + '1\r\n'
+
+
+    @classmethod
     def dial(cls, number):
         assert isinstance(number, str)
         return atcmd('D', False) + '{0};\r\n'.format(number)
@@ -66,28 +74,36 @@ class SIMModuleBase(object):
     def __init__(self, datasource):
         assert isinstance(datasource, DataSource)
         self.__datasource = datasource
+        self.__initialize()
         self.__thread = threading.Thread(target=self.__worker)
         self.__thread.start()
 
-    def initialize(self):
+    def __initialize(self):
         cmds = [
             'AT+CLIP=1',
+            'ATE0',
         ]
+        print('Initializing SIM module...')
         for i in cmds:
+            print(i)
             self.__datasource.write('{0}\r\n'.format(i).encode())
             self.__wait_ok()
 
     def __wait_ok(self):
         done = False
         counter = 0
+        msgs = []
         while done == False and counter < 3:
             line = self.__datasource.readline()
             line = line.decode()
-            if line[:1] == 'OK':
+            msgs.append(line)
+            if line == 'OK\r\n':
                 done = True
-            counter += 1
+            if line is None or line == '':
+                counter += 1
         if not done:
             raise Exception('No OK reply')
+        return msgs
 
     @abstractmethod
     def on_message(self, number, text):
@@ -104,22 +120,26 @@ class SIMModuleBase(object):
             time.sleep(1)
 
     def __process_data(self, line):
-        if line[0] == '+':
-            self.__process_plus(line[1:])
-        elif line[:3] == 'RING':
+        #print(line)
+        if len(line) > 1 and line[0] == '+':
+            self.__process_plus(line)
+        elif len(line) > 4 and line[:3] == 'RING':
             #incoming call
             # need to use at+clcc to get phone number
             pass
-        elif line[:10] == 'MISSED_CALL':
+        elif len(line) > 11 and line[:10] == 'MISSED_CALL':
             #missed call
             pass
 
     def __process_plus(self, line):
         tokens = line.split(':')
-        datatype = tokens[0][1:]
-        if datatype.upper() == 'CMTI':
-            #new message
+        datatype = tokens[0]
+        if datatype.upper() == '+CMTI':
             sms_idx = tokens[1].split(',')[-1]
+            tmp = ATCommands.readmsg(sms_idx)
+            self.__datasource.write(tmp.encode())
+            msgs = self.__wait_ok()
+            print(msgs)
 
     def __worker(self):
         while True:
@@ -140,12 +160,6 @@ class MySIM(SIMModuleBase):
 
 
 if __name__ == '__main__':
-    '''print(ATCommands.dial('6073484940'))
-    print(ATCommands.hungup())
-    print(ATCommands.regstatus())
-    print(ATCommands.readmsg(1))
-    print(ATCommands.readnewmsgs())'''
     tmp = SerialDataSource()
     a = MySIM(tmp)
-    a.send_message('6073484940', 'test')
-    time.sleep(10)
+    time.sleep(200)
