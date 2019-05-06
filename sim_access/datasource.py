@@ -50,11 +50,3 @@ class SerialDataSource(DataSource):
 
     def available(self):
         return self.__port.in_waiting
-
-
-if __name__ == '__main__':
-    tmp = SerialDataSource()
-    tmp.write('AT\r\n'.encode())
-    time.sleep(3)
-    while tmp.available():
-        sys.stdout.write('[{0}]'.format(tmp.readline().decode()))
