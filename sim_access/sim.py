@@ -4,11 +4,18 @@ from abc import abstractmethod, ABCMeta
 import threading
 import time
 import sys
+import binascii
 
 
-def ucs2string(text):
+def ucs2encode(text):
+    if text is None or text == '':
+        return ''
     return text.encode('utf-16-be').hex().upper()
 
+def ucs2decode(text):
+    if text is None or text == '':
+        return ''
+    return binascii.unhexlify(text).decode('utf-16-be')
 
 def atcmd(cmd, extended):
     assert isinstance(cmd, str)
@@ -69,8 +76,8 @@ class ATCommands(object):
 
     @classmethod
     def sendmsg(cls, number, text):
-        return [atset('CMGS', True) + '"{0}"\r'.format(ucs2string(number)),
-                '{0}\x1a\n'.format(ucs2string(text))]
+        return [atset('CMGS', True) + '"{0}"\r'.format(ucs2encode(number)),
+                '{0}\x1a\n'.format(ucs2encode(text))]
 
     @classmethod
     def delallmsgs(cls):
@@ -173,7 +180,8 @@ class SIMModuleBase(object):
             if number[0] == '\"' and number[-1] == '\"':
                 number = number[1:-1]
             content = msgs[1:-1]
-            self.on_message(number, '\n'.join(content))
+            self.on_message(ucs2decode(number),
+                            '\n'.join([ucs2decode(i) for i in content if i is not None and i != '']))
 
             tmp = ATCommands.delallmsgs()
             self.__datasource.write(tmp.encode())
