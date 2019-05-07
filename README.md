@@ -2,6 +2,7 @@
 A Python module for managing SIM modules
 
 
+## Setup
 The setup is:
 - A serial sim module SIM7500A.
 - A USB to serial module connecting my computer with SIM7500A. 
@@ -28,3 +29,6 @@ Whenever you received an SMS, **on_message()** willl be called. If you receive a
 
 There is no implemenation of answering the phone call right now. The SIM module I bought does not support answering phone calls.
 
+## Implementation
+
+Internally, I use a thread to monitor incoming texts and calls.
