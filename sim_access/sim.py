@@ -117,7 +117,7 @@ class SIMModuleBase(object):
             'ATE0',
             'AT+CSCS="UCS2"',
         ]
-        print('Initializing SIM module...')
+        #print('Initializing SIM module...')
         for i in cmds:
             #print(i)
             self.__datasource.write('{0}\r\n'.format(i).encode())
