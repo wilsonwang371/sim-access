@@ -9,9 +9,9 @@ class MySIM(SIMModuleBase):
     def on_call(self, number):
         print('Got phone call from {0}'.format(number))
         time.sleep(5)
-        self.hungup_calls()
+        self.call_hungup()
         time.sleep(5)
-        self.send_message(number, 'You called me!')
+        self.sms_send(number, 'You called me!')
 
 
 if __name__ == '__main__':

@@ -12,10 +12,12 @@ def ucs2encode(text):
         return ''
     return text.encode('utf-16-be').hex().upper()
 
+
 def ucs2decode(text):
     if text is None or text == '':
         return ''
     return binascii.unhexlify(text).decode('utf-16-be')
+
 
 def atcmd(cmd, extended):
     assert isinstance(cmd, str)
@@ -47,49 +49,53 @@ def atset(cmd, extended):
 class ATCommands(object):
 
     @classmethod
-    def setecho(cls, enable):
+    def module_setecho(cls, enable):
         if enable == False:
             return atcmd('E', False) + '0\r\n'
         else:
             return atcmd('E', False) + '1\r\n'
 
     @classmethod
-    def dial(cls, number):
+    def call_dial(cls, number):
         assert isinstance(number, str)
         return atcmd('D', False) + '{0};\r\n'.format(number)
 
     @classmethod
-    def hungup(cls):
+    def call_hungup(cls):
         return atcmd('CHUP', True) + '\r\n'
 
     @classmethod
-    def poweroff(cls):
+    def call_callerinfo(cls):
+        return atread('CLCC', True) + '\r\n'
+
+    @classmethod
+    def module_poweroff(cls):
         return atset('CPOF', True) + '1\r\n'
 
     @classmethod
-    def regstatus(cls):
+    def module_regstatus(cls):
         return atread('COPS', True) + '\r\n'
 
     @classmethod
-    def readmsg(cls, index):
+    def sms_fetch(cls, index):
         return atset('CMGR', True) + '{0}\r\n'.format(index)
     
     @classmethod
-    def readnewmsgs(cls):
+    def sms_unread(cls):
         return atset('CMGL', True) + '"REC UNREAD"\r\n'
 
     @classmethod
-    def sendmsg(cls, number, text):
+    def sms_send(cls, number, text):
         return [atset('CMGS', True) + '"{0}"\r'.format(ucs2encode(number)),
                 '{0}\x1a\n'.format(ucs2encode(text))]
 
     @classmethod
-    def delallmsgs(cls):
-        return atset('CMGD', True) + '1,4\r\n'
-    
+    def sms_del(cls, idx):
+        return atset('CMGD', True) + '{0},0\r\n'.format(idx)
+
     @classmethod
-    def callerinfo(cls):
-        return atread('CLCC', True) + '\r\n'
+    def sms_delall(cls):
+        return atset('CMGD', True) + '1,3\r\n'
 
 
 @six.add_metaclass(ABCMeta)
@@ -145,19 +151,19 @@ class SIMModuleBase(object):
     def on_call(self, number):
         raise NotImplementedError()
 
-    def send_message(self, number, text):
-        cmd = ATCommands.sendmsg(number, text)
+    def sms_send(self, number, text):
+        cmd = ATCommands.sms_send(number, text)
         for i in cmd:
             self.__datasource.write(i.encode())
             time.sleep(1)
 
-    def hungup_calls(self):
-        tmp = ATCommands.hungup()
+    def call_hungup(self):
+        tmp = ATCommands.call_hungup()
         self.__datasource.write(tmp.encode())
         self.__wait_ok()
 
-    def power_off(self):
-        tmp = ATCommands.poweroff()
+    def module_poweroff(self):
+        tmp = ATCommands.module_poweroff()
         self.__datasource.write(tmp.encode())
         self.__wait_ok()
 
@@ -187,7 +193,7 @@ class SIMModuleBase(object):
         datatype = tokens[0]
         if datatype.upper() == '+CMTI':
             sms_idx = tokens[1].split(',')[-1]
-            tmp = ATCommands.readmsg(sms_idx)
+            tmp = ATCommands.sms_fetch(sms_idx)
             self.__datasource.write(tmp.encode())
             msgs = self.__wait_ok()
             msgs = self.__massage_recv_data(msgs)
@@ -200,12 +206,12 @@ class SIMModuleBase(object):
             self.on_message(ucs2decode(number),
                             '\n'.join([ucs2decode(i) for i in content if i is not None and i != '']))
 
-            tmp = ATCommands.delallmsgs()
+            tmp = ATCommands.sms_del(sms_idx)
             self.__datasource.write(tmp.encode())
             self.__wait_ok()
 
     def __process_incoming_call(self):
-        tmp = ATCommands.callerinfo()
+        tmp = ATCommands.call_callerinfo()
         self.__datasource.write(tmp.encode())
         tmp = self.__wait_ok()
         tmp = self.__massage_recv_data(tmp)
