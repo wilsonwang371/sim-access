@@ -16,13 +16,17 @@ To receive SMS and calls, you need to write a class from base class SIMModuleBas
 class MySIM(SIMModuleBase):
     def on_message(self, number, text):
         print('Text from: {0}, Content: \"{1}\"'.format(number, text))
-    
+
     def on_call(self, number):
         print('Got phone call from {0}'.format(number))
         time.sleep(5)
         self.call_hangup()
         time.sleep(5)
         self.sms_send(number, 'You called me!')
+
+if __name__ == '__main__':
+    MySIM().mainloop()
+
 ```
 
 Whenever you received an SMS, **on_message()** willl be called. If you receive a phone call, **on_call()** will be called. Please note that **on_call()** could be called multiple times during a phone call.

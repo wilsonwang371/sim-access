@@ -19,4 +19,4 @@ if __name__ == '__main__':
     # directory and use PYTHONPATH variable for now.
     tmp = SerialDataSource()
     a = MySIM(tmp)
-    time.sleep(200)
+    a.mainloop()

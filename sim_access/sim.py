@@ -105,8 +105,8 @@ class SIMModuleBase(object):
         assert isinstance(datasource, DataSource)
         self.__datasource = datasource
         self.__initialize()
-        self.__thread = threading.Thread(target=self.__worker)
-        self.__thread.start()
+        self.__monitorthread = threading.Thread(target=self.__monitor_loop)
+        self.__monitorthread.start()
 
     def __initialize(self):
         cmds = [
@@ -167,6 +167,12 @@ class SIMModuleBase(object):
         self.__datasource.write(tmp.encode())
         self.__wait_ok()
 
+    def mainloop(self):
+        ''' Currently we are doing nothing here except
+            joining the thread
+        '''
+        self.__monitorthread.join()
+
     def __process_data(self, line):
         if len(line) > 1 and line[0] == '+':
             self.__process_plus(line)
@@ -223,7 +229,7 @@ class SIMModuleBase(object):
         if number is not None:
             self.on_call(number)
 
-    def __worker(self):
+    def __monitor_loop(self):
         while True:
             try:
                 line = self.__datasource.readline()
