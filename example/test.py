@@ -3,8 +3,8 @@ from sim_access.datasource import SerialDataSource
 import time
 
 class MySIM(SIMModuleBase):
-    def on_message(self, number, text):
-        print('Text from: {0}, Content: \"{1}\"'.format(number, text))
+    def on_sms(self, number, content):
+        print('Text from: {0}, Content: \"{1}\"'.format(number, content))
     
     def on_call(self, number):
         print('Got phone call from {0}'.format(number))

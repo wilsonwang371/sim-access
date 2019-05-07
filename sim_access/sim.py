@@ -61,6 +61,10 @@ class ATCommands(object):
         return atcmd('D', False) + '{0};\r\n'.format(number)
 
     @classmethod
+    def call_answer(cls):
+        return atcmd('A', False) + '\r\n'
+
+    @classmethod
     def call_hangup(cls):
         return atcmd('CHUP', True) + '\r\n'
 
@@ -144,25 +148,42 @@ class SIMModuleBase(object):
         return msgs
 
     @abstractmethod
-    def on_message(self, number, text):
+    def on_sms(self, number, content):
+        ''' This is called when we received an sms message
+        '''
         raise NotImplementedError()
 
     @abstractmethod
     def on_call(self, number):
+        ''' This is called when we received a phone call
+        '''
         raise NotImplementedError()
 
     def sms_send(self, number, text):
+        ''' send text to a destination number
+        '''
         cmd = ATCommands.sms_send(number, text)
         for i in cmd:
             self.__datasource.write(i.encode())
             time.sleep(1)
 
+    def call_answer(self):
+        ''' answer current phone call
+        '''
+        tmp = ATCommands.call_answer()
+        self.__datasource.write(tmp.encode())
+        self.__wait_ok()
+
     def call_hangup(self):
+        ''' hangup current phone call
+        '''
         tmp = ATCommands.call_hangup()
         self.__datasource.write(tmp.encode())
         self.__wait_ok()
 
     def module_poweroff(self):
+        ''' reset sim module
+        '''
         tmp = ATCommands.module_poweroff()
         self.__datasource.write(tmp.encode())
         self.__wait_ok()
@@ -209,7 +230,7 @@ class SIMModuleBase(object):
             if number[0] == '\"' and number[-1] == '\"':
                 number = number[1:-1]
             content = msgs[1:-1]
-            self.on_message(ucs2decode(number),
+            self.on_sms(ucs2decode(number),
                             '\n'.join([ucs2decode(i) for i in content if i is not None and i != '']))
 
             tmp = ATCommands.sms_del(sms_idx)
