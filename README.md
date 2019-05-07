@@ -1,7 +1,8 @@
 # sim-access
 
-My current setup is:
+A Python module for managing SIM modules
 
+My current setup is:
 
 - A serial sim module SIM7500A.
 - A USB to serial module connecting my computer with SIM7500A. 
