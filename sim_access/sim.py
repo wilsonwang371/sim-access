@@ -63,6 +63,10 @@ class ATCommands(object):
         return atcmd('CHUP', True) + '\r\n'
 
     @classmethod
+    def poweroff(cls):
+        return atset('CPOF', True) + '1\r\n'
+
+    @classmethod
     def regstatus(cls):
         return atread('COPS', True) + '\r\n'
 
@@ -149,6 +153,11 @@ class SIMModuleBase(object):
 
     def hungup_calls(self):
         tmp = ATCommands.hungup()
+        self.__datasource.write(tmp.encode())
+        self.__wait_ok()
+
+    def power_off(self):
+        tmp = ATCommands.poweroff()
         self.__datasource.write(tmp.encode())
         self.__wait_ok()
 
