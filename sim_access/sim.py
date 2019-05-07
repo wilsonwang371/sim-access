@@ -61,7 +61,7 @@ class ATCommands(object):
         return atcmd('D', False) + '{0};\r\n'.format(number)
 
     @classmethod
-    def call_hungup(cls):
+    def call_hangup(cls):
         return atcmd('CHUP', True) + '\r\n'
 
     @classmethod
@@ -157,8 +157,8 @@ class SIMModuleBase(object):
             self.__datasource.write(i.encode())
             time.sleep(1)
 
-    def call_hungup(self):
-        tmp = ATCommands.call_hungup()
+    def call_hangup(self):
+        tmp = ATCommands.call_hangup()
         self.__datasource.write(tmp.encode())
         self.__wait_ok()
 
