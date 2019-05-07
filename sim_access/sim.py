@@ -82,6 +82,10 @@ class ATCommands(object):
     @classmethod
     def delallmsgs(cls):
         return atset('CMGD', True) + '1,4\r\n'
+    
+    @classmethod
+    def callerinfo(cls):
+        return atread('CLCC', True) + '\r\n'
 
 
 @six.add_metaclass(ABCMeta)
@@ -116,6 +120,7 @@ class SIMModuleBase(object):
         while done == False and counter < 3:
             line = self.__datasource.readline()
             line = line.decode()
+            #print(line)
             msgs.append(line)
             if line == 'OK\r\n':
                 done = True
@@ -145,11 +150,11 @@ class SIMModuleBase(object):
     def __process_data(self, line):
         if len(line) > 1 and line[0] == '+':
             self.__process_plus(line)
-        elif len(line) > 4 and line[:3] == 'RING':
+        elif len(line) > 4 and line[:4] == 'RING':
             #incoming call
             # need to use at+clcc to get phone number
-            pass
-        elif len(line) > 11 and line[:10] == 'MISSED_CALL':
+            self.__process_incoming_call()
+        elif len(line) > 11 and line[:11] == 'MISSED_CALL':
             #missed call
             pass
 
@@ -185,6 +190,19 @@ class SIMModuleBase(object):
             tmp = ATCommands.delallmsgs()
             self.__datasource.write(tmp.encode())
             self.__wait_ok()
+
+    def __process_incoming_call(self):
+        tmp = ATCommands.callerinfo()
+        self.__datasource.write(tmp.encode())
+        tmp = self.__wait_ok()
+        tmp = self.__massage_recv_data(tmp)
+        number = None
+        for i in tmp:
+            if i.find('+CLIP:') == 0:
+                number = i.split(',')[0][8:-1]
+                break
+        if number is not None:
+            self.on_call(number)
 
     def __worker(self):
         while True:
