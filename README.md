@@ -12,7 +12,7 @@ The setup is:
 
 To receive SMS and calls, you need to write a class from base class SIMModuleBase. There are two method you need to implement. **on_message()** and **on_call()**. Here is one example.
 
-```
+```python
 class MySIM(SIMModuleBase):
     def on_message(self, number, text):
         print('Text from: {0}, Content: \"{1}\"'.format(number, text))
