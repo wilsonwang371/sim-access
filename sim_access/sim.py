@@ -147,12 +147,16 @@ class SIMModuleBase(object):
             self.__datasource.write(i.encode())
             time.sleep(1)
 
+    def hungup_calls(self):
+        tmp = ATCommands.hungup()
+        self.__datasource.write(tmp.encode())
+        self.__wait_ok()
+
     def __process_data(self, line):
         if len(line) > 1 and line[0] == '+':
             self.__process_plus(line)
         elif len(line) > 4 and line[:4] == 'RING':
             #incoming call
-            # need to use at+clcc to get phone number
             self.__process_incoming_call()
         elif len(line) > 11 and line[:11] == 'MISSED_CALL':
             #missed call
