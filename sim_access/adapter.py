@@ -6,7 +6,7 @@ import sys
 
 
 @six.add_metaclass(ABCMeta)
-class DataSource(object):
+class AdapterBase(object):
 
     @abstractmethod
     def read(self, size=0):
@@ -26,7 +26,7 @@ class DataSource(object):
 
 
 
-class SerialDataSource(DataSource):
+class SerialAdapter(AdapterBase):
 
     def __init__(self, devfile='/dev/tty.usbserial-00000000', baud=115200):
         self.__port = serial.Serial(devfile, baudrate=baud, timeout=3.0)

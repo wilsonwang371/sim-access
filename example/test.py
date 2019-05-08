@@ -1,5 +1,5 @@
 from sim_access.sim import  SIMModuleBase
-from sim_access.datasource import SerialDataSource
+from sim_access.adapter import SerialAdapter
 import time
 
 class MySIM(SIMModuleBase):
@@ -17,6 +17,6 @@ class MySIM(SIMModuleBase):
 if __name__ == '__main__':
     # You may need to run this at the parent
     # directory and use PYTHONPATH variable for now.
-    tmp = SerialDataSource()
+    tmp = SerialAdapter()
     a = MySIM(tmp)
     a.mainloop()

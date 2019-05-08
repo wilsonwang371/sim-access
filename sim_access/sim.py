@@ -1,4 +1,4 @@
-from sim_access.datasource import DataSource, SerialDataSource
+from sim_access.adapter import AdapterBase, SerialAdapter
 import six
 from abc import abstractmethod, ABCMeta
 import threading
@@ -105,9 +105,9 @@ class ATCommands(object):
 @six.add_metaclass(ABCMeta)
 class SIMModuleBase(object):
 
-    def __init__(self, datasource):
-        assert isinstance(datasource, DataSource)
-        self.__datasource = datasource
+    def __init__(self, adapter):
+        assert isinstance(adapter, AdapterBase)
+        self.__adapter = adapter
         self.__initialize()
         self.__monitorthread = threading.Thread(target=self.__monitor_loop)
         self.__monitorthread.start()
@@ -124,7 +124,7 @@ class SIMModuleBase(object):
         #print('Initializing SIM module...')
         for i in cmds:
             #print(i)
-            self.__datasource.write('{0}\r\n'.format(i).encode())
+            self.__adapter.write('{0}\r\n'.format(i).encode())
             self.__wait_ok()
 
     def __wait_ok(self):
@@ -132,7 +132,7 @@ class SIMModuleBase(object):
         counter = 0
         msgs = []
         while done == False and counter < 3:
-            line = self.__datasource.readline()
+            line = self.__adapter.readline()
             line = line.decode()
             #print(line)
             msgs.append(line)
@@ -164,28 +164,28 @@ class SIMModuleBase(object):
         '''
         cmd = ATCommands.sms_send(number, text)
         for i in cmd:
-            self.__datasource.write(i.encode())
+            self.__adapter.write(i.encode())
             time.sleep(1)
 
     def call_answer(self):
         ''' answer current phone call
         '''
         tmp = ATCommands.call_answer()
-        self.__datasource.write(tmp.encode())
+        self.__adapter.write(tmp.encode())
         self.__wait_ok()
 
     def call_hangup(self):
         ''' hangup current phone call
         '''
         tmp = ATCommands.call_hangup()
-        self.__datasource.write(tmp.encode())
+        self.__adapter.write(tmp.encode())
         self.__wait_ok()
 
     def module_poweroff(self):
         ''' reset sim module
         '''
         tmp = ATCommands.module_poweroff()
-        self.__datasource.write(tmp.encode())
+        self.__adapter.write(tmp.encode())
         self.__wait_ok()
 
     def mainloop(self):
@@ -221,7 +221,7 @@ class SIMModuleBase(object):
         if datatype.upper() == '+CMTI':
             sms_idx = tokens[1].split(',')[-1]
             tmp = ATCommands.sms_fetch(sms_idx)
-            self.__datasource.write(tmp.encode())
+            self.__adapter.write(tmp.encode())
             msgs = self.__wait_ok()
             msgs = self.__massage_recv_data(msgs)
 
@@ -234,12 +234,12 @@ class SIMModuleBase(object):
                             '\n'.join([ucs2decode(i) for i in content if i is not None and i != '']))
 
             tmp = ATCommands.sms_del(sms_idx)
-            self.__datasource.write(tmp.encode())
+            self.__adapter.write(tmp.encode())
             self.__wait_ok()
 
     def __process_incoming_call(self):
         tmp = ATCommands.call_callerinfo()
-        self.__datasource.write(tmp.encode())
+        self.__adapter.write(tmp.encode())
         tmp = self.__wait_ok()
         tmp = self.__massage_recv_data(tmp)
         number = None
@@ -253,7 +253,7 @@ class SIMModuleBase(object):
     def __monitor_loop(self):
         while True:
             try:
-                line = self.__datasource.readline()
+                line = self.__adapter.readline()
                 line = line.decode()
                 self.__process_data(line)
             except Exception as e:
