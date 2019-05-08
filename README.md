@@ -21,8 +21,9 @@ class MySIM(SIMModuleBase):
         print('Got phone call from {0}'.format(number))
         time.sleep(5)
         self.call_hangup()
-        time.sleep(5)
-        self.sms_send(number, 'You called me!')
+
+    def on_call_missed(self, number):
+        self.sms_send(number, 'Sorry, I missed your call!')
 
 if __name__ == '__main__':
     MySIM().mainloop()
