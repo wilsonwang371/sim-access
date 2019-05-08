@@ -114,16 +114,14 @@ class SIMModuleBase(object):
 
     def __initialize(self):
         cmds = [
-            'AT',
-            'AT+CMGF=1',
+            'AT', #test if basic function is working
+            'AT+CMGF=1', #we want to run in text mode
             'AT+CSMP=17,167,0,8',
-            'AT+CLIP=1',
-            'ATE0',
-            'AT+CSCS="UCS2"',
+            'AT+CLIP=1', #we want caller info when receiving call
+            'ATE0', #no echo is needed
+            'AT+CSCS="UCS2"', #we want to be able to send unicode
         ]
-        #print('Initializing SIM module...')
         for i in cmds:
-            #print(i)
             self.__adapter.write('{0}\r\n'.format(i).encode())
             self.__wait_ok()
 
