@@ -7,6 +7,8 @@ The setup is:
 - A serial sim module SIM7500A.
 - A USB to serial module connecting my computer with SIM7500A. 
 
+The reason I am using a USB to Serial module is because I always want to make things easier to integrate with different setups. I hate connecting different GPIO wires with the SIM module and this is not sexy at all. With a USB to Serial module. It can be easier to plug and unplug to your systems.
+
 <img src="https://cdn10.bigcommerce.com/s-rs1s2e/products/1375/images/2743/SIM7500A-5__33469.1542867154.1280.1280.png?c=2" width=200> <img src="https://images-na.ssl-images-amazon.com/images/I/71Uo%2BlNcjTL._SX425_.jpg" width=200>
 
 
