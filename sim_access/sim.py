@@ -102,6 +102,9 @@ class ATCommands(object):
         return atset('CMGD', True) + '1,3\r\n'
 
 
+'''TODO: we need to follow https://wiki.keyestudio.com/Ks0287_keyestudio_SIM5320E_3G_Module_(Black)
+    to finish all the actions
+'''
 @six.add_metaclass(ABCMeta)
 class SIMModuleBase(object):
 
@@ -111,6 +114,11 @@ class SIMModuleBase(object):
         self.__initialize()
         self.__monitorthread = threading.Thread(target=self.__monitor_loop)
         self.__monitorthread.start()
+        self.__parse_table = {
+            '+CMTI': self.__sms_process,
+            'RING': self.__call_process,
+            'MISSED_CALL': self.__call_process_missed,
+        }
 
     def __initialize(self):
         cmds = [
@@ -157,6 +165,13 @@ class SIMModuleBase(object):
         '''
         raise NotImplementedError()
 
+    @abstractmethod
+    def on_missed_call(self, number):
+        ''' This is called when we missed a call.
+            This can happen when we hangup an incoming call
+        '''
+        raise NotImplementedError()
+
     def sms_send(self, number, text):
         ''' send text to a destination number
         '''
@@ -193,14 +208,13 @@ class SIMModuleBase(object):
         self.__monitorthread.join()
 
     def __process_data(self, line):
-        if len(line) > 1 and line[0] == '+':
-            self.__process_plus(line)
-        elif len(line) > 4 and line[:4] == 'RING':
-            #incoming call
-            self.__process_incoming_call()
-        elif len(line) > 11 and line[:11] == 'MISSED_CALL':
-            #missed call
-            pass
+        for k, v in six.iteritems(self.__parse_table):
+            if line.find(k) == 0:
+                try:
+                    v(line)
+                except Exception as e:
+                    print(str(e))
+                break
 
     def __massage_recv_data(self, msgs):
         rtn = []
@@ -213,7 +227,7 @@ class SIMModuleBase(object):
                 rtn.append(i)
         return rtn
 
-    def __process_plus(self, line):
+    def __sms_process(self, line):
         tokens = line.split(':')
         datatype = tokens[0]
         if datatype.upper() == '+CMTI':
@@ -229,13 +243,14 @@ class SIMModuleBase(object):
                 number = number[1:-1]
             content = msgs[1:-1]
             self.on_sms(ucs2decode(number),
-                            '\n'.join([ucs2decode(i) for i in content if i is not None and i != '']))
+                            '\n'.join([ucs2decode(i) for i in content
+                                       if i is not None and i != '']))
 
             tmp = ATCommands.sms_del(sms_idx)
             self.__adapter.write(tmp.encode())
             self.__wait_ok()
 
-    def __process_incoming_call(self):
+    def __call_process(self, line):
         tmp = ATCommands.call_callerinfo()
         self.__adapter.write(tmp.encode())
         tmp = self.__wait_ok()
@@ -248,6 +263,13 @@ class SIMModuleBase(object):
         if number is not None:
             self.on_call(number)
 
+    def __call_process_missed(self, line):
+        ''' process missed call, something like:
+            MISSED_CALL: 00:20AM 02132523094
+        '''
+        number = line.split(':').split()[-1]
+        self.on_missed_call(number)
+
     def __monitor_loop(self):
         while True:
             try:
@@ -257,5 +279,3 @@ class SIMModuleBase(object):
             except Exception as e:
                 print(str(e))
                 sys.exit(0)
-
-
