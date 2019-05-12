@@ -1,10 +1,16 @@
-from sim_access.adapter import AdapterBase, SerialAdapter
-import six
-from abc import abstractmethod, ABCMeta
+import binascii
+import logging
+import os
+import sys
 import threading
 import time
-import sys
-import binascii
+from abc import ABCMeta, abstractmethod
+
+import six
+
+from sim_access.adapter import AdapterBase, SerialAdapter
+
+logger = logging.getLogger(__name__)
 
 
 def ucs2encode(text):
@@ -133,10 +139,10 @@ class SIMModuleBase(object):
         ]
         count = 0
         while count < 10 and not self.module_checkready():
-            print('waiting SIM module to be ready...')
+            logger.debug('waiting SIM module to be ready...')
             count += 1
             time.sleep(1)
-        print('SIM module is ready.')
+        logger.info('SIM module is ready.')
         if count >= 10:
             raise Exception('module not ready')
         for i in cmds:
@@ -150,7 +156,7 @@ class SIMModuleBase(object):
         while done == False and counter < 3:
             line = self.__adapter.readline()
             line = line.decode()
-            #print(line)
+            logger.debug(line)
             msgs.append(line)
             if line == 'OK\r\n':
                 done = True
@@ -230,7 +236,11 @@ class SIMModuleBase(object):
         self.__monitorthread = threading.Thread(target=self.__monitor_loop)
         self.__monitorthread.start()
         if not detached:
-            self.__monitorthread.join()
+            try:
+                self.__monitorthread.join()
+            except KeyboardInterrupt:
+                logger.info('Exiting...')
+                os._exit(0)
 
     def loop_once(self):
         ''' This is doing the same as mainloop, but just once
@@ -243,7 +253,7 @@ class SIMModuleBase(object):
                 try:
                     v(line)
                 except Exception as e:
-                    print(str(e))
+                    logger.error(str(e))
                 break
 
     def __massage_recv_data(self, msgs):
@@ -306,7 +316,7 @@ class SIMModuleBase(object):
             line = line.decode()
             self.__process_data(line)
         except Exception as e:
-            print(str(e))
+            logger.error(str(e))
             sys.exit(0)
 
     def __monitor_loop(self):

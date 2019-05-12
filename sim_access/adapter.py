@@ -1,8 +1,13 @@
-from abc import ABCMeta, abstractmethod
-import six
-import serial
-import time
+import logging
 import sys
+import time
+from abc import ABCMeta, abstractmethod
+
+import serial
+import six
+
+
+logger = logging.getLogger(__name__)
 
 
 @six.add_metaclass(ABCMeta)
@@ -40,12 +45,12 @@ class SerialAdapter(AdapterBase):
     
     def readline(self):
         data = self.__port.readline()
-        #print('<' + data.decode())
+        logger.debug('<' + data.decode())
         return data
 
     def write(self, data):
         assert isinstance(data, bytes)
-        #print('>' + data.decode())
+        logger.debug('>' + data.decode())
         self.__port.write(data)
 
     def available(self):
