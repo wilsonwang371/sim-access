@@ -27,8 +27,16 @@ if __name__ == '__main__':
     # directory and use PYTHONPATH variable for now.
     logging.basicConfig(format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.INFO)
+                        level=logging.DEBUG)
 
     tmp = SerialAdapter(devfile='/dev/cu.usbserial-1410')
     a = MySIM(tmp)
+
+    #based on https://m2msupport.net/m2msupport/atciicr-bring-up-gprs-or-circuit-switch-connection/
+    a.network_attach()
+    a.network_setapn('pwg') # usmobile apn
+    a.network_bringup()
+    addr = a.network_ipaddr()
+    print(addr)
+
     a.mainloop()

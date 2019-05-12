@@ -91,6 +91,22 @@ class ATCommands(object):
         return atread('COPS', True) + '\r\n'
 
     @classmethod
+    def network_setapn(cls, apn):
+        return atset('CSTT', True) + '\"{0}\"\r\n'.format(apn)
+
+    @classmethod
+    def network_attach(cls):
+        return atset('CGATT', True) + '1\r\n'
+
+    @classmethod
+    def network_bringup(cls):
+        return atcmd('CIICR', True) + '\r\n'
+    
+    @classmethod
+    def network_ipaddr(cls):
+        return atcmd('CIFSR', True) + '\r\n'
+
+    @classmethod
     def sms_fetch(cls, index):
         return atset('CMGR', True) + '{0}\r\n'.format(index)
     
@@ -148,6 +164,7 @@ class SIMModuleBase(object):
         for i in cmds:
             self.__adapter.write('{0}\r\n'.format(i).encode())
             self.__wait_ok()
+        self.__network_up = False
 
     def __wait_ok(self):
         done = False
@@ -228,6 +245,40 @@ class SIMModuleBase(object):
         tmp = ATCommands.module_poweroff()
         self.__adapter.write(tmp.encode())
         self.__wait_ok()
+
+    def network_setapn(self, apn):
+        ''' set up APN for network access
+        '''
+        tmp = ATCommands.network_setapn(apn)
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+
+    def network_attach(self):
+        ''' attach up network
+        '''
+        tmp = ATCommands.network_attach()
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+        time.sleep(2)
+
+    def network_bringup(self):
+        ''' bring up network
+        '''
+        tmp = ATCommands.network_bringup()
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+        self.__network_up = True
+
+    def network_ipaddr(self):
+        ''' get local ip address
+        '''
+        tmp = ATCommands.network_ipaddr()
+        self.__adapter.write(tmp.encode())
+        tmp = '\r\n'
+        while tmp == '\r\n':
+            tmp = self.__adapter.readline()
+            tmp = tmp.decode()
+        return tmp
 
     def mainloop(self, detached=False):
         ''' Currently we are doing nothing here except
