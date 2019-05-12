@@ -4,7 +4,7 @@ A Python module for managing SIM modules
 
 ## Setup
 The setup is:
-- A serial sim module SIM7500A.
+- A serial sim module SIM7500A (SIM800L is supported too).
 - A USB to serial module connecting my computer with SIM7500A. 
 
 The reason I am using a USB to Serial module is because I always want to make things easier to integrate with different setups. I hate connecting different GPIO wires with the SIM module and this is not sexy at all. With a USB to Serial module. It can be easier to plug and unplug to your systems.
