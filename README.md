@@ -12,6 +12,10 @@ The reason I am using a USB to Serial module is because I always want to make th
 <img src="https://cdn10.bigcommerce.com/s-rs1s2e/products/1375/images/2743/SIM7500A-5__33469.1542867154.1280.1280.png?c=2" width=200> <img src="https://images-na.ssl-images-amazon.com/images/I/71Uo%2BlNcjTL._SX425_.jpg" width=200>
 
 
+## Coding
+
+### Texts and Calls
+
 To receive SMS and calls, you need to write a class from base class SIMModuleBase. There are two method you need to implement. **on_sms()** and **on_call()**. Here is one example.
 
 ```python
@@ -48,6 +52,20 @@ You can manage the loop yourself
         a.loop_once()
         # do something 2 ...
 ```
+
+### GPS
+
+You can also get your GPS locations, date and time using method **gps_location_date_time**
+
+``` python
+    class MySIM(SIMModuleBase):
+        ...
+    
+    sim = MySIM()
+    ((mylong, mylat), mydate, mytime) = sim.gps_location_date_time('<YOUR APN>')
+    print('Longitude: {0}\nLatitude: {1}\nDate: {2}\nTime: {3}\n'.format(mylong, mylat, mydate, mytime))
+```
+
 
 Whenever you received an SMS, **on_sms()** willl be called. If you receive a phone call, **on_call()** will be called. Please note that **on_call()** could be called multiple times during a phone call.
 

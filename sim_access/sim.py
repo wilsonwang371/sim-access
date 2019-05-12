@@ -91,6 +91,14 @@ class ATCommands(object):
         return atread('COPS', True) + '\r\n'
 
     @classmethod
+    def module_sapbr(cls, cmd):
+        return atset('SAPBR', True) + '{0}\r\n'.format(cmd)
+
+    @classmethod
+    def gps_query(cls):
+        return atset('CIPGSMLOC', True) + '1,1\r\n'
+
+    @classmethod
     def network_setapn(cls, apn):
         return atset('CSTT', True) + '\"{0}\"\r\n'.format(apn)
 
@@ -148,6 +156,7 @@ class SIMModuleBase(object):
         cmds = [
             'AT', #test if basic function is working
             'AT+CMGF=1', #we want to run in text mode
+            'AT+CGATT=1', #enable GPS
             'AT+CSMP=17,167,0,8',
             'AT+CLIP=1', #we want caller info when receiving call
             'ATE0', #no echo is needed
@@ -245,6 +254,34 @@ class SIMModuleBase(object):
         tmp = ATCommands.module_poweroff()
         self.__adapter.write(tmp.encode())
         self.__wait_ok()
+
+    def gps_location_date_time(self, apn):
+        ''' get gps location date and time
+        '''
+        tmp = ATCommands.module_sapbr('3,1,"CONTYPE","GPRS"')
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+        tmp = ATCommands.module_sapbr('3,1,"APN","{0}"'.format(apn))
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+        tmp = ATCommands.module_sapbr('1,1')
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+        tmp = ATCommands.module_sapbr('2,1')
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+        tmp = ATCommands.gps_query()
+        self.__adapter.write(tmp.encode())
+        result = self.__wait_ok()
+        tmp = ATCommands.module_sapbr('0,1')
+        self.__adapter.write(tmp.encode())
+        self.__wait_ok()
+        assert len(result) > 2
+        tmp = result[1]
+        assert tmp.find('+CIPGSMLOC') == 0
+        vsuccess, vlongitude, vlatitude, vdate, vtime = tmp.split(' ')[1].split(',')
+        assert vsuccess == '0'
+        return ((vlongitude, vlatitude), vdate, vtime)
 
     def network_setapn(self, apn):
         ''' set up APN for network access

@@ -2,3 +2,6 @@
 .vscode/cscope_conf.json
 .vscode/arduino.json
 .vscode/c_cpp_properties.json
+build/*
+dist/*
+*.egg-info
