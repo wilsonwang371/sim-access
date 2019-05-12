@@ -10,14 +10,15 @@ class MySIM(SIMModuleBase):
         print('Got phone call from {0}'.format(number))
         time.sleep(5)
         self.call_hangup()
+        self.sms_send(number, '😫Sorry I missed your call!')
     
     def on_missed_call(self, number):
-        self.sms_send(number, 'Sorry I missed your call!')
+        self.sms_send(number, '😫Sorry I missed your call!')
 
 
 if __name__ == '__main__':
     # You may need to run this at the parent
     # directory and use PYTHONPATH variable for now.
-    tmp = SerialAdapter()
+    tmp = SerialAdapter(devfile='/dev/cu.usbserial-1410')
     a = MySIM(tmp)
     a.mainloop()

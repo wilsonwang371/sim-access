@@ -32,6 +32,21 @@ if __name__ == '__main__':
 
 ```
 
+You can detach the mainloop thread
+
+``` python
+    a.mainloop(True)
+```
+
+You can manage the loop yourself
+
+``` python
+    while True:
+        # do something 1 ...
+        a.loop_once()
+        # do something 2 ...
+```
+
 Whenever you received an SMS, **on_sms()** willl be called. If you receive a phone call, **on_call()** will be called. Please note that **on_call()** could be called multiple times during a phone call.
 
 There is no implemenation of answering the phone call right now. The SIM module I bought does not support answering phone calls.

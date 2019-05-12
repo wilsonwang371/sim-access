@@ -73,6 +73,10 @@ class ATCommands(object):
         return atread('CLCC', True) + '\r\n'
 
     @classmethod
+    def module_checkready(cls):
+        return atread('CPIN', True) + '\r\n'
+
+    @classmethod
     def module_poweroff(cls):
         return atset('CPOF', True) + '1\r\n'
 
@@ -112,8 +116,6 @@ class SIMModuleBase(object):
         assert isinstance(adapter, AdapterBase)
         self.__adapter = adapter
         self.__initialize()
-        self.__monitorthread = threading.Thread(target=self.__monitor_loop)
-        self.__monitorthread.start()
         self.__parse_table = {
             '+CMTI': self.__sms_process,
             'RING': self.__call_process,
@@ -129,6 +131,14 @@ class SIMModuleBase(object):
             'ATE0', #no echo is needed
             'AT+CSCS="UCS2"', #we want to be able to send unicode
         ]
+        count = 0
+        while count < 10 and not self.module_checkready():
+            print('waiting SIM module to be ready...')
+            count += 1
+            time.sleep(1)
+        print('SIM module is ready.')
+        if count >= 10:
+            raise Exception('module not ready')
         for i in cmds:
             self.__adapter.write('{0}\r\n'.format(i).encode())
             self.__wait_ok()
@@ -168,7 +178,8 @@ class SIMModuleBase(object):
     @abstractmethod
     def on_missed_call(self, number):
         ''' This is called when we missed a call.
-            This can happen when we hangup an incoming call
+            This can happen when we hangup an incoming call.
+            NOTE: this is not working on SIM800
         '''
         raise NotImplementedError()
 
@@ -194,6 +205,17 @@ class SIMModuleBase(object):
         self.__adapter.write(tmp.encode())
         self.__wait_ok()
 
+    def module_checkready(self):
+        ''' check if module is ready
+        '''
+        tmp = ATCommands.module_checkready()
+        self.__adapter.write(tmp.encode())
+        tmp = self.__wait_ok()
+        for i in tmp:
+            if i.find('+CPIN: READY') == 0:
+                return True
+        return False
+
     def module_poweroff(self):
         ''' reset sim module
         '''
@@ -201,11 +223,19 @@ class SIMModuleBase(object):
         self.__adapter.write(tmp.encode())
         self.__wait_ok()
 
-    def mainloop(self):
+    def mainloop(self, detached=False):
         ''' Currently we are doing nothing here except
             joining the thread
         '''
-        self.__monitorthread.join()
+        self.__monitorthread = threading.Thread(target=self.__monitor_loop)
+        self.__monitorthread.start()
+        if not detached:
+            self.__monitorthread.join()
+
+    def loop_once(self):
+        ''' This is doing the same as mainloop, but just once
+        '''
+        self.__loop_task()
 
     def __process_data(self, line):
         for k, v in six.iteritems(self.__parse_table):
@@ -270,12 +300,15 @@ class SIMModuleBase(object):
         number = line.split(':').split()[-1]
         self.on_missed_call(number)
 
+    def __loop_task(self):
+        try:
+            line = self.__adapter.readline()
+            line = line.decode()
+            self.__process_data(line)
+        except Exception as e:
+            print(str(e))
+            sys.exit(0)
+
     def __monitor_loop(self):
         while True:
-            try:
-                line = self.__adapter.readline()
-                line = line.decode()
-                self.__process_data(line)
-            except Exception as e:
-                print(str(e))
-                sys.exit(0)
+            self.__loop_task()
