@@ -25,6 +25,8 @@ class MySIM(SIMModuleBase):
         self.call_hangup()
 
     def on_call_missed(self, number):
+        ''' This function is not working for SIM800
+        '''
         self.sms_send(number, 'Sorry, I missed your call!')
 
 if __name__ == '__main__':
