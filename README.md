@@ -9,7 +9,7 @@ The setup is:
 
 The reason I am using a USB to Serial module is because I always want to make things easier to integrate with different setups. I hate connecting different GPIO wires with the SIM module and this is not sexy at all. With a USB to Serial module. It can be easier to plug and unplug to your systems.
 
-<img src="./images/sim7500a.jpeg" width=200> <img src="./images/usb-to-serial.jpeg" width=200>
+<img src="./images/sim7500a.jpeg" height=160> <img src="./images/usb-to-serial.jpeg" width=200>
 
 
 ## Coding
